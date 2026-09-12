@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Exceptions\TicketNotOpenException;
 use App\Models\TicketMessage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 
 class TicketService
@@ -65,9 +66,9 @@ class TicketService
     {
         return DB::transaction(function () use ($data) {
             $ticket = Ticket::create([
-                'customer_id' => $data['customer_id'],
-                'category_id' => $data['category_id'],
-                'priority_id' => $data['priority_id'],
+                'customer_id' => $data['customer_id'] ?? auth('sanctum')->id() ?? 1,
+                'category_id' => $data['category_id'] ?? 1,
+                'priority_id' => $data['priority_id'] ?? 1,
                 'title' => $data['title'],
                 'description' => $data['description'],
                 'status' => 'open',

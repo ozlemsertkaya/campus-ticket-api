@@ -105,7 +105,7 @@ class TicketController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ["title", "description", "category_id", "priority_id", "customer_id"],
+                required: ["title", "description"],
                 properties: [
                     new OA\Property(property: "title", type: "string"),
                     new OA\Property(property: "description", type: "string"),
@@ -121,6 +121,20 @@ class TicketController extends Controller
     )]
     public function create(Request $request)
     {
+        // 1. customer_id gönderilmediyse giriş yapan kullanıcının ID'sini ver
+        if (!isset($data['customer_id'])) {
+            $data['customer_id'] = $request->user()?->id ?? 1;
+        }
+
+        // 2. category_id gönderilmediyse varsayılan 1 ata
+        if (!isset($data['category_id'])) {
+            $data['category_id'] = 1;
+        }
+
+        // 3. priority_id gönderilmediyse varsayılan 1 ata
+        if (!isset($data['priority_id'])) {
+            $data['priority_id'] = 1;
+        }
         $ticket = $this->ticketService->create($request->all());
         return response()->json($ticket, 201);
     }
@@ -140,6 +154,10 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $query = Ticket::query()->with(['customer', 'category', 'priority', 'assignedUser']);
+        $user = $request->user();
+        if ($user && $user->role === 'student') {
+            $query->where('customer_id', $user->id);
+        }
         if ($request->filled('status')) { //istekte status diye bir pparametre var mjı ve boş değil mi?kontrolü yapar.
             $query->where('status', $request->input('status'));
         }

@@ -6,11 +6,48 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
 
 class AuthController extends Controller
 {
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'unique:users,email',
+                'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu\.tr$/i'
+            ],
+            'password' => 'required|string|min:6',
+            'role' => 'required|in:student,agent', //öğrenci mi personel mi doğrulaması
+        ], [
+            'email.regex' => 'Yalnızca üniversite e-postası (.edu.tr) ile kayıt olabilirsiniz!',
+            'email.unique' => 'Bu e-posta adresiyle zaten bir hesap açılmış.',
+            'password.min' => 'Şifreniz en az 6 karakter olmalıdır.',
+        ]);
+        $email = Str::lower($request->email);
+        //rolü e postadan yakalıyoruz.
+        $role = (Str::contains($email, 'ogr.') || Str::contains($email, 'ogrenci.')) ? 'student' : 'agent';
+        //kullanııcyı oluştur
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $email,
+            'password' => Hash::make($request->password),
+            'role'     => $request->role,
+        ]);
+        //Sanctum ile token üret
+        $token = $user->createToken('auth-token')->plainTextToken;
+        return response()->json([
+            'message' => 'Kayıt başarılı!',
+            'token' => $token,
+            'user' => $user
+        ], 201);
+    }
     #[OA\Post(
         path: "/api/login",
         summary: "Giriş yap, token al",
@@ -34,14 +71,17 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|string'
         ]);
-        $user = User::where('email', $credentials['email'])->first();
-        if (!$user || !Hash::check($credentials['password'], $user->password)) { //veritabanındaki hashlenmiş şifreyle karşılaştırıyor.
+
+        $user = User::where('email', Str::lower($request->email))->first();
+        //şifre veya kullanıcı yanlışsa
+        if (!$user || !Hash::check($request->password, $user->password)) { //veritabanındaki hashlenmiş şifreyle karşılaştırıyor.
             return response()->json(['message' => 'Bilgiler hatalı.'], 401);
         }
-        $token = $user->createToken('api-token')->plainTextToken; //Kullanıcı için yeni benzersiz token üretir.birden fazla giriş yapılırsa ayırt etmk için.
+        $token = $user->createToken('auth-token')->plainTextToken; //Kullanıcı için yeni benzersiz token üretir.birden fazla giriş yapılırsa ayırt etmk için.
         return response()->json([
-            'user' => $user,
+            'message' => 'Giriş başarılı!',
             'token' => $token,
+            'user' => $user
         ]);
     }
 
