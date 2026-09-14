@@ -39,9 +39,14 @@ class TicketController extends Controller
     )]
     public function assign(Request $request, Ticket $ticket)
     {
-        $user = User::findOrFail($request->input('user_id'));
+        $userId = $request->input('user_id') ?? $request->user()?->id;
+        //talebi üzerime al butonuna bastığında hiçbir parametre göndermese bile id üzerinden bilet direkt onun üzerine geçr.
+        $user = User::findOrFail($userId);
         $updated = $this->ticketService->assign($ticket, $user);
-        return response()->json($updated);
+        return response()->json([
+            'message' => 'Talep başarıyla atandı.',
+            'ticket' => $updated
+        ]);
     }
     #[OA\Post(
         path: "/api/tickets/{ticket}/resolve",
@@ -121,6 +126,7 @@ class TicketController extends Controller
     )]
     public function create(Request $request)
     {
+        $data = $request->all();
         // 1. customer_id gönderilmediyse giriş yapan kullanıcının ID'sini ver
         if (!isset($data['customer_id'])) {
             $data['customer_id'] = $request->user()?->id ?? 1;

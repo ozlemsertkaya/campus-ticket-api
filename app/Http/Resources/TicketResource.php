@@ -20,12 +20,12 @@ class TicketResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'resolved_at' => $this->resolved_at,
-            'customer' => [
+            'customer' => $this->customer ? [
                 'id' => $this->customer->id,
                 'name' => $this->customer->name,
-            ],
-            'category' => $this->category->name,
-            'priority' => $this->priority->name,
+            ] : null,
+            'category' => $this->category?->name,
+            'priority' => $this->priority?->name,
             'assigned_user' => $this->assignedUser?->name,
             'created_at' => $this->created_at,
         ];

@@ -65,17 +65,14 @@ class TicketService
     public function create(array $data): Ticket
     {
         return DB::transaction(function () use ($data) {
-            $ticket = Ticket::create([
+            return Ticket::create([
                 'customer_id' => $data['customer_id'] ?? auth('sanctum')->id() ?? 1,
                 'category_id' => $data['category_id'] ?? 1,
                 'priority_id' => $data['priority_id'] ?? 1,
-                'title' => $data['title'],
+                'title'       => $data['title'],
                 'description' => $data['description'],
-                'status' => 'open',
-
+                'status'      => 'open',
             ]);
-
-            return $ticket;
         });
     }
 }

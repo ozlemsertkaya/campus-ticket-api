@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) { //var olan users tablosuna ekleme yapıyoruz
-            $table->enum('role', ['agent', 'admin'])->default('agent')->after('email');
+            $table->enum('role', ['student', 'agent', 'admin'])->default('student')->after('email');
         });       //sadece bu değerlrdn biri olablr.   //rol belirtilmzse agent olsun der.
     }
 
