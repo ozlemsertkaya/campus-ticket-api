@@ -224,6 +224,12 @@ class TicketController extends Controller
         $ticket->update($data);
         return $ticket;
     }
+    public function getMessages(Ticket $ticket)
+    {
+        //Mesajları gönderen kullanıcı bilgisiyle birlikte eskiden yeniye çekiyoruz.
+        $messages = $ticket->messages()->with('sender')->oldest()->get();
+        return response()->json($messages);
+    }
     #[OA\Delete(
         path: "/api/tickets/{ticket}",
         summary: "Talebi sil",

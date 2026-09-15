@@ -26,7 +26,7 @@ class TicketMessageController extends Controller
         $message = $ticket->messages()->create([
             'message' => $request->message,
             'sender_type' => get_class($user),
-            'sender_id' => $user->id,
+            'sender_id' => $request->user()->id,
         ]);
         return response()->json($message->load('sender'), 201);
     }
