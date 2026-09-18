@@ -230,6 +230,24 @@ class TicketController extends Controller
         $messages = $ticket->messages()->with('sender')->oldest()->get();
         return response()->json($messages);
     }
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:open,in_progress,resolved,closed'
+        ]);
+        $ticket = Ticket::findOrFail($id);
+        $user = $request->user();
+        //Destek personeli ya da admin tüm statüleri atayabilsin
+        if (!in_array($user->role, ['agent', 'support', 'admin'])) {
+            return response()->json(['message' => 'Bu işlem için yetkiniz yok.'], 403);
+        }
+        $ticket->status = $request->status;
+        if ($request->status === 'resolved') {
+            $ticket->resolved_at = now();
+        }
+        $ticket->save();
+        return response()->json(['message' => 'Durum güncellendi', 'ticket' => $ticket]);
+    }
     #[OA\Delete(
         path: "/api/tickets/{ticket}",
         summary: "Talebi sil",
