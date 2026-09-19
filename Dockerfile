@@ -14,14 +14,10 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www
 
-# Önce sadece bağımlılık dosyalarını al (önbellek için)
-COPY composer.json composer.lock ./
-
-# Zip arşivleri yerine doğrudan kaynaktan indir ve platform kontrolünü esnet
-RUN composer install --no-dev --prefer-source --no-interaction --no-scripts --ignore-platform-reqs
-
-# Kalan tüm dosyaları kopyala
 COPY . .
+
+# Mevcut vendor kopyalandıysa temizle ve optimize etmeden düz kur
+RUN rm -rf vendor && composer install --no-dev --no-interaction --no-scripts --ignore-platform-reqs
 
 EXPOSE 8080
 CMD php artisan migrate --force && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}
