@@ -1,27 +1,22 @@
-FROM php:8.2-cli
+FROM php:8.3-cli
 
-# Sistem bağımlılıkları ve Laravel için gerekli PHP modülleri
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libpq-dev \
     libzip-dev \
     zip \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    && docker-php-ext-install pdo pdo_pgsql zip bcmath mbstring
+    && docker-php-ext-install pdo pdo_pgsql zip
 
-# Composer kurulumu
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www
 COPY . .
 
-# Scriptleri çalıştırmadan ve platform kontrollerini esneterek kurulum yap
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
+# Arşiv açma hatalarını ve versiyon kilitlerini aşmak için optimize edilmiş kurulum
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 EXPOSE 8080
 CMD php artisan migrate --force && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}
