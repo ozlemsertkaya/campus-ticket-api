@@ -8,4 +8,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD php artisan serve --host 0.0.0.0 --port 8080
+CMD /bin/sh -c "php artisan migrate:fresh --force && php artisan serve --host 0.0.0.0 --port 8080"
