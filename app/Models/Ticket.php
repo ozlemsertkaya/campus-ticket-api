@@ -32,7 +32,7 @@ class Ticket extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(User::class, 'customer_id');
     }
     public function assignedUser(): BelongsTo
     {
