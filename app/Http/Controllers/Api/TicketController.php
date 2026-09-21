@@ -126,22 +126,43 @@ class TicketController extends Controller
     )]
     public function create(Request $request)
     {
+        // 1. Eğer veritabanında hiç kategori yoksa anında 1 numaralıyı otomatik oluştur
+        \Illuminate\Support\Facades\DB::table('categories')->insertOrIgnore([
+            'id' => 1,
+            'name' => 'Genel Arıza / Teknik',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 2. Eğer veritabanında hiç öncelik yoksa onları da otomatik oluştur
+        if (\Illuminate\Support\Facades\Schema::hasTable('priorities')) {
+            \Illuminate\Support\Facades\DB::table('priorities')->insertOrIgnore([
+                ['id' => 1, 'name' => 'Düşük', 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 2, 'name' => 'Orta', 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 3, 'name' => 'Yüksek', 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+
         $data = $request->all();
-        // 1. customer_id gönderilmediyse giriş yapan kullanıcının ID'sini ver
+
+        // 3. customer_id gönderilmediyse giriş yapan kullanıcının ID'sini ver
         if (!isset($data['customer_id'])) {
             $data['customer_id'] = $request->user()?->id ?? 1;
         }
 
-        // 2. category_id gönderilmediyse varsayılan 1 ata
+        // 4. category_id gönderilmediyse varsayılan 1 ata
         if (!isset($data['category_id'])) {
             $data['category_id'] = 1;
         }
 
-        // 3. priority_id gönderilmediyse varsayılan 1 ata
+        // 5. priority_id gönderilmediyse varsayılan 1 ata
         if (!isset($data['priority_id'])) {
             $data['priority_id'] = 1;
         }
-        $ticket = $this->ticketService->create($request->all());
+
+        // KRİTİK DÜZELTME: Servise $request->all() değil, hazırladığımız $data gidiyor!
+        $ticket = $this->ticketService->create($data);
+
         return response()->json($ticket, 201);
     }
     #[OA\Get(
