@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete(); //users tablosunu belirtiyoruz.assigned_to dan laravel otomatik olark çıkaramaz.
             $table->foreignId('category_id')->constrained();                    //user sistemden silinmişse ona atanmış talepler silinmesin.
             $table->foreignId('priority_id')->constrained();
