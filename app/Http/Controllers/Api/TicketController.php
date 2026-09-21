@@ -126,32 +126,31 @@ class TicketController extends Controller
     )]
     public function create(Request $request)
     {
-        // 1. Canlı veritabanında 1 numaralı kategori yoksa ekle
+        // 1. Kategoriyi ekle
         \Illuminate\Support\Facades\DB::statement("
-            INSERT INTO categories (id, name, created_at, updated_at) 
-            VALUES (1, 'Genel Arıza / Teknik', NOW(), NOW()) 
-            ON CONFLICT (id) DO NOTHING;
-        ");
+        INSERT INTO categories (id, name, created_at, updated_at) 
+        VALUES (1, 'Genel Destek', NOW(), NOW()) 
+        ON CONFLICT (id) DO NOTHING;
+    ");
 
-        // 2. Canlı veritabanında öncelikler yoksa garantiye al
+        // 2. Öncelikleri 'level' sütununu da doldurarak ekle
         \Illuminate\Support\Facades\DB::statement("
-            INSERT INTO priorities (id, name, created_at, updated_at) VALUES 
-            (1, 'Düşük', NOW(), NOW()),
-            (2, 'Orta', NOW(), NOW()),
-            (3, 'Yüksek', NOW(), NOW()),
-            (4, 'Acil', NOW(), NOW())
-            ON CONFLICT (id) DO NOTHING;
-        ");
+        INSERT INTO priorities (id, name, level, created_at, updated_at) VALUES 
+        (1, 'Düşük', 1, NOW(), NOW()),
+        (2, 'Orta', 2, NOW(), NOW()),
+        (3, 'Yüksek', 3, NOW(), NOW()),
+        (4, 'Acil', 4, NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+    ");
 
-        // 3. PostgreSQL sequence sayaçlarını senkronize et
+        // 3. PostgreSQL sayaçlarını senkronize et
         try {
             \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('categories', 'id'), COALESCE((SELECT MAX(id) FROM categories), 1));");
             \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('priorities', 'id'), COALESCE((SELECT MAX(id) FROM priorities), 1));");
         } catch (\Throwable $e) {
-            // SQLite veya sequence bulunamama durumunda devam et
         }
 
-        // 4. Veriyi hazırla ve doğrudan Ticket modeline yaz
+        // 4. Bileti oluştur
         $ticket = Ticket::create([
             'customer_id' => $request->user()?->id ?? 1,
             'category_id' => 1,
@@ -163,6 +162,7 @@ class TicketController extends Controller
 
         return response()->json($ticket, 201);
     }
+
     #[OA\Get(
         path: "/api/tickets",
         summary: "Talepleri listele(filtreli,sayfalı)",

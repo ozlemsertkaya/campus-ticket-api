@@ -21,9 +21,10 @@ class DatabaseSeeder extends Seeder
 
         if (Schema::hasTable('priorities')) {
             DB::table('priorities')->insertOrIgnore([
-                ['id' => 1, 'name' => 'Düşük', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 2, 'name' => 'Orta', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 3, 'name' => 'Yüksek', 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 1, 'name' => 'Düşük', 'level' => 1, 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 2, 'name' => 'Orta',  'level' => 2, 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 3, 'name' => 'Yüksek', 'level' => 3, 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 4, 'name' => 'Acil',   'level' => 4, 'created_at' => now(), 'updated_at' => now()],
             ]);
         }
     }
