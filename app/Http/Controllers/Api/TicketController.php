@@ -126,42 +126,40 @@ class TicketController extends Controller
     )]
     public function create(Request $request)
     {
-        // 1. Eğer veritabanında hiç kategori yoksa anında 1 numaralıyı otomatik oluştur
-        \Illuminate\Support\Facades\DB::table('categories')->insertOrIgnore([
-            'id' => 1,
-            'name' => 'Genel Arıza / Teknik',
-            'created_at' => now(),
-            'updated_at' => now(),
+        // 1. Canlı veritabanında 1 numaralı kategori yoksa ekle
+        \Illuminate\Support\Facades\DB::statement("
+            INSERT INTO categories (id, name, created_at, updated_at) 
+            VALUES (1, 'Genel Arıza / Teknik', NOW(), NOW()) 
+            ON CONFLICT (id) DO NOTHING;
+        ");
+
+        // 2. Canlı veritabanında öncelikler yoksa garantiye al
+        \Illuminate\Support\Facades\DB::statement("
+            INSERT INTO priorities (id, name, created_at, updated_at) VALUES 
+            (1, 'Düşük', NOW(), NOW()),
+            (2, 'Orta', NOW(), NOW()),
+            (3, 'Yüksek', NOW(), NOW()),
+            (4, 'Acil', NOW(), NOW())
+            ON CONFLICT (id) DO NOTHING;
+        ");
+
+        // 3. PostgreSQL sequence sayaçlarını senkronize et
+        try {
+            \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('categories', 'id'), COALESCE((SELECT MAX(id) FROM categories), 1));");
+            \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('priorities', 'id'), COALESCE((SELECT MAX(id) FROM priorities), 1));");
+        } catch (\Throwable $e) {
+            // SQLite veya sequence bulunamama durumunda devam et
+        }
+
+        // 4. Veriyi hazırla ve doğrudan Ticket modeline yaz
+        $ticket = Ticket::create([
+            'customer_id' => $request->user()?->id ?? 1,
+            'category_id' => 1,
+            'priority_id' => $request->input('priority_id') ?? 2,
+            'title'       => $request->input('title'),
+            'description' => $request->input('description'),
+            'status'      => 'open',
         ]);
-
-        // 2. Eğer veritabanında hiç öncelik yoksa onları da otomatik oluştur
-        if (\Illuminate\Support\Facades\Schema::hasTable('priorities')) {
-            \Illuminate\Support\Facades\DB::table('priorities')->insertOrIgnore([
-                ['id' => 1, 'name' => 'Düşük', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 2, 'name' => 'Orta', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 3, 'name' => 'Yüksek', 'created_at' => now(), 'updated_at' => now()],
-            ]);
-        }
-
-        $data = $request->all();
-
-        // 3. customer_id gönderilmediyse giriş yapan kullanıcının ID'sini ver
-        if (!isset($data['customer_id'])) {
-            $data['customer_id'] = $request->user()?->id ?? 1;
-        }
-
-        // 4. category_id gönderilmediyse varsayılan 1 ata
-        if (!isset($data['category_id'])) {
-            $data['category_id'] = 1;
-        }
-
-        // 5. priority_id gönderilmediyse varsayılan 1 ata
-        if (!isset($data['priority_id'])) {
-            $data['priority_id'] = 1;
-        }
-
-        // KRİTİK DÜZELTME: Servise $request->all() değil, hazırladığımız $data gidiyor!
-        $ticket = $this->ticketService->create($data);
 
         return response()->json($ticket, 201);
     }
